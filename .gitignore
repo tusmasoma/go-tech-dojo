@@ -22,5 +22,6 @@ go.work
 go.work.sum
 
 bin/
+tmp/
 .env
 .certificate/
