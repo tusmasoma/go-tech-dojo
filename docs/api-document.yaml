@@ -1,8 +1,8 @@
 openapi: 3.0.2
 info:
-  title: CA Tech Dojo API
+  title: Go Tech Dojo API
   description: |-
-    <b>CA Tech Dojo API仕様</b><br>
+    <b>Go Tech Dojo API仕様</b><br>
     まずはこのAPI仕様に沿って機能を実装してみましょう。<br><br>
     なお、実装に際してランキング機能の実装が必要となります。<br>
     ランキングの実装にMySQLではなくredisを利用することも可能です。<br>
