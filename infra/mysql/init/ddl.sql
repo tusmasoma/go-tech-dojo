@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS User_Collections CASCADE;
 CREATE TABLE Users (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     coins INT DEFAULT 0,
     high_score INT DEFAULT 0
