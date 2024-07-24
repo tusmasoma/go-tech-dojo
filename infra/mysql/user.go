@@ -3,9 +3,11 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/tusmasoma/go-tech-dojo/domain/model"
 	"github.com/tusmasoma/go-tech-dojo/domain/repository"
+	"github.com/tusmasoma/go-tech-dojo/pkg/log"
 )
 
 type userRepository struct {
@@ -112,4 +114,30 @@ func (ur *userRepository) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	return nil
+}
+
+func (ur *userRepository) LockUserByEmail(ctx context.Context, email string) (bool, error) {
+	executor := ur.db
+	if tx := TxFromCtx(ctx); tx != nil {
+		executor = tx
+	}
+
+	query := `SELECT id
+	FROM Users
+	WHERE email = ?
+	FOR UPDATE
+	`
+
+	row := executor.QueryRowContext(ctx, query, email)
+
+	var id string
+	if err := row.Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Info("No user found with the provided email", log.Fstring("email", email))
+			return false, nil
+		}
+		log.Error("Failed to scan row", log.Ferror(err))
+		return false, err
+	}
+	return true, nil
 }

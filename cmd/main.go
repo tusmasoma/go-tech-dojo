@@ -14,7 +14,12 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
+	"github.com/tusmasoma/go-tech-dojo/infra/mysql"
+	"github.com/tusmasoma/go-tech-dojo/interfaces/handler"
 	"github.com/tusmasoma/go-tech-dojo/pkg/log"
+	"github.com/tusmasoma/go-tech-dojo/usecase"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -38,6 +43,20 @@ func main() {
 }
 
 func Serve(addr string) {
+	mainCtx, cancelMain := context.WithCancel(context.Background())
+	defer cancelMain()
+
+	db, err := mysql.NewMySQLDB(mainCtx)
+	if err != nil {
+		log.Error("Failed to connect to DB", log.Ferror(err))
+		return
+	}
+
+	transactionRepo := mysql.NewTransactionRepository(db)
+	userRepo := mysql.NewUserRepository(db)
+	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo)
+	userHandler := handler.NewUserHandler(userUseCase)
+
 	/* ===== URLマッピングを行う ===== */
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
@@ -48,6 +67,12 @@ func Serve(addr string) {
 		AllowCredentials: false,
 		MaxAge:           PreflightCacheDurationSeconds,
 	}))
+
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/user", func(r chi.Router) {
+			r.Post("/create", userHandler.CreateUser)
+		})
+	})
 
 	/* ===== サーバの設定 ===== */
 	srv := &http.Server{
@@ -64,7 +89,7 @@ func Serve(addr string) {
 	defer stop()
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err = srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error("Server failed", log.Ferror(err))
 		}
 	}()
@@ -75,7 +100,7 @@ func Serve(addr string) {
 	tctx, cancel := context.WithTimeout(context.Background(), GracefulShutdownTimeout)
 	defer cancel()
 
-	if err := srv.Shutdown(tctx); err != nil {
+	if err = srv.Shutdown(tctx); err != nil {
 		log.Error("Failed to shutdown http server", log.Ferror(err))
 	}
 	log.Info("Server exited")
