@@ -15,6 +15,7 @@ import (
 type UserUseCase interface {
 	GetUser(ctx context.Context) (*model.User, error)
 	CreateUserAndToken(ctx context.Context, email string, passward string) (string, error)
+	UpdateUser(ctx context.Context, coins, highscore int) (*model.User, error)
 }
 
 type userUseCase struct {
@@ -76,4 +77,28 @@ func (uuc *userUseCase) CreateUserAndToken(ctx context.Context, email string, pa
 
 	jwt, _ := auth.GenerateToken(user.ID, user.Email)
 	return jwt, nil
+}
+
+func (uuc *userUseCase) UpdateUser(ctx context.Context, coins, highscore int) (*model.User, error) {
+	userIDValue := ctx.Value(config.ContextUserIDKey)
+	userID, ok := userIDValue.(string)
+	if !ok {
+		log.Error("User ID not found in request context")
+		return nil, fmt.Errorf("user name not found in request context")
+	}
+	user, err := uuc.ur.Get(ctx, userID)
+	if err != nil {
+		log.Error("Error getting user", log.Fstring("user_id", userID))
+		return nil, err
+	}
+
+	// TODO: setter method for user
+	user.Coins = coins
+	user.HighScore = highscore
+
+	if err = uuc.ur.Update(ctx, *user); err != nil {
+		log.Error("Error updating user", log.Fstring("user_id", userID))
+		return nil, err
+	}
+	return user, nil
 }

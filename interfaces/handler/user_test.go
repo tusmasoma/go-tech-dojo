@@ -155,3 +155,80 @@ func TestUserHandler_CreateUser(t *testing.T) {
 		})
 	}
 }
+
+func TestUserHandler_UpdateUser(t *testing.T) {
+	t.Parallel()
+
+	patterns := []struct {
+		name  string
+		setup func(
+			m *mock.MockUserUseCase,
+		)
+		in         func() *http.Request
+		wantStatus int
+	}{
+		{
+			name: "success",
+			setup: func(m *mock.MockUserUseCase) {
+				m.EXPECT().UpdateUser(gomock.Any(), 100, 1000).Return(
+					&model.User{
+						ID:        uuid.New().String(),
+						Name:      "test",
+						Email:     "test@gmail.com",
+						Coins:     100,
+						HighScore: 1000,
+					}, nil,
+				)
+			},
+			in: func() *http.Request {
+				userUpdateReq := UpdateUserRequest{Coins: 100, HighScore: 1000}
+				reqBody, _ := json.Marshal(userUpdateReq)
+				req, _ := http.NewRequest(http.MethodPut, "/api/user/update", bytes.NewBuffer(reqBody))
+				return req
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "Fail: invalid request of coins",
+			in: func() *http.Request {
+				userUpdateReq := UpdateUserRequest{Coins: -100, HighScore: 1000}
+				reqBody, _ := json.Marshal(userUpdateReq)
+				req, _ := http.NewRequest(http.MethodPut, "/api/user/update", bytes.NewBuffer(reqBody))
+				return req
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Fail: invalid request of highscore",
+			in: func() *http.Request {
+				userUpdateReq := UpdateUserRequest{Coins: 100, HighScore: -1000}
+				reqBody, _ := json.Marshal(userUpdateReq)
+				req, _ := http.NewRequest(http.MethodPut, "/api/user/update", bytes.NewBuffer(reqBody))
+				return req
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range patterns {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			uuc := mock.NewMockUserUseCase(ctrl)
+
+			if tt.setup != nil {
+				tt.setup(uuc)
+			}
+
+			handler := NewUserHandler(uuc)
+			recorder := httptest.NewRecorder()
+			handler.UpdateUser(recorder, tt.in())
+
+			if status := recorder.Code; status != tt.wantStatus {
+				t.Fatalf("handler returned wrong status code: got %v want %v", status, tt.wantStatus)
+			}
+		})
+	}
+}

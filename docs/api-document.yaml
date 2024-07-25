@@ -82,8 +82,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetUserResponse'
       x-codegen-request-body-name: body
-  /user/update:
-    post:
+  /api/user/update:
+    put:
       tags:
         - user
       summary: ユーザ情報更新API
@@ -97,7 +97,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserUpdateRequest'
+              $ref: '#/components/schemas/UpdateUserRequest'
         required: true
       responses:
         200:
@@ -105,7 +105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserUpdateResponse'
+                $ref: '#/components/schemas/UpdateUserResponse'
       x-codegen-request-body-name: body
   /game/finish:
     post:
@@ -235,10 +235,10 @@ components:
         password:
           type: string
           description: ユーザのパスワード
-        highScore:
+        high_score:
           type: integer
           description: ハイスコア
-        coin:
+        coins:
           type: integer
           description: 所持コイン
     GetUserResponse:
@@ -253,22 +253,22 @@ components:
         email:
           type: string
           description: ユーザのメールアドレス
-        highScore:
+        high_score:
           type: integer
           description: ハイスコア
-        coin:
+        coins:
           type: integer
           description: 所持コイン
-    UserUpdateRequest:
+    UpdateUserRequest:
       type: object
       properties:
-        highScore:
+        high_score:
           type: integer
           description: ハイスコア
-        coin:
+        coins:
           type: integer
           description: 所持コイン
-    UserUpdateResponse:
+    UpdateUserResponse:
       type: object
       properties:
         id:
@@ -277,13 +277,13 @@ components:
         name:
           type: string
           description: ユーザ名
-        password:
+        email:
           type: string
-          description: ユーザのパスワード
-        highScore:
+          description: ユーザのメールアドレス
+        high_score:
           type: integer
           description: ハイスコア
-        coin:
+        coins:
           type: integer
           description: 所持コイン
     GameFinishRequest:

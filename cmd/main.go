@@ -76,6 +76,7 @@ func Serve(addr string) {
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.Authenticate)
 				r.Get("/get", userHandler.GetUser)
+				r.Put("/update", userHandler.UpdateUser)
 			})
 		})
 	})
