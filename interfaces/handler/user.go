@@ -10,7 +10,7 @@ import (
 )
 
 type UserHandler interface {
-	// GetUser(w http.ResponseWriter, r *http.Request)
+	GetUser(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
 	// UpdateUser(w http.ResponseWriter, r *http.Request)
 }
@@ -22,6 +22,37 @@ type userHandler struct {
 func NewUserHandler(uuc usecase.UserUseCase) UserHandler {
 	return &userHandler{
 		uuc: uuc,
+	}
+}
+
+type GetUserResponse struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Coins     int    `json:"coins"`
+	HighScore int    `json:"high_score"`
+}
+
+func (uh *userHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	user, err := uh.uuc.GetUser(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err = json.NewEncoder(w).Encode(GetUserResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Coins:     user.Coins,
+		HighScore: user.HighScore,
+	}); err != nil {
+		http.Error(w, "Failed to encode user to JSON", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/tusmasoma/go-tech-dojo/config"
 	"github.com/tusmasoma/go-tech-dojo/domain/model"
 	"github.com/tusmasoma/go-tech-dojo/domain/repository"
 	"github.com/tusmasoma/go-tech-dojo/pkg/auth"
@@ -12,6 +13,7 @@ import (
 )
 
 type UserUseCase interface {
+	GetUser(ctx context.Context) (*model.User, error)
 	CreateUserAndToken(ctx context.Context, email string, passward string) (string, error)
 }
 
@@ -25,6 +27,21 @@ func NewUserUseCase(ur repository.UserRepository, tr repository.TransactionRepos
 		ur: ur,
 		tr: tr,
 	}
+}
+
+func (uuc *userUseCase) GetUser(ctx context.Context) (*model.User, error) {
+	userIDValue := ctx.Value(config.ContextUserIDKey)
+	userID, ok := userIDValue.(string)
+	if !ok {
+		log.Error("User ID not found in request context")
+		return nil, fmt.Errorf("user name not found in request context")
+	}
+	user, err := uuc.ur.Get(ctx, userID)
+	if err != nil {
+		log.Error("Error getting user", log.Fstring("user_id", userID))
+		return nil, err
+	}
+	return user, nil
 }
 
 func (uuc *userUseCase) CreateUserAndToken(ctx context.Context, email string, password string) (string, error) {
