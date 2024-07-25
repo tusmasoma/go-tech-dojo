@@ -165,3 +165,92 @@ func TestUserUseCase_CreateUserAndToken(t *testing.T) {
 		})
 	}
 }
+
+type UpdateUserArg struct {
+	ctx       context.Context
+	coins     int
+	highscore int
+}
+
+func TestUserUseCase_UpdateUser(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New().String()
+	ctx := context.WithValue(context.Background(), config.ContextUserIDKey, userID)
+
+	user := model.User{
+		ID:        userID,
+		Name:      "test",
+		Email:     "test@gmail.com",
+		Coins:     100,
+		HighScore: 1000,
+	}
+
+	patterns := []struct {
+		name  string
+		setup func(
+			m *mock.MockUserRepository,
+			m1 *mock.MockTransactionRepository,
+		)
+		arg     UpdateUserArg
+		wantErr error
+	}{
+		{
+			name: "success",
+			setup: func(m *mock.MockUserRepository, m1 *mock.MockTransactionRepository) {
+				m.EXPECT().Get(
+					ctx,
+					userID,
+				).Return(&user, nil)
+				user.Coins = 120
+				user.HighScore = 1100
+				m.EXPECT().Update(
+					gomock.Any(),
+					user,
+				).Return(nil)
+			},
+			arg: UpdateUserArg{
+				ctx:       ctx,
+				coins:     120,
+				highscore: 1100,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Fail: User ID not found in request context",
+			arg: UpdateUserArg{
+				ctx:       context.Background(),
+				coins:     100,
+				highscore: 1000,
+			},
+			wantErr: fmt.Errorf("user name not found in request context"),
+		},
+	}
+	for _, tt := range patterns {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			ur := mock.NewMockUserRepository(ctrl)
+			tr := mock.NewMockTransactionRepository(ctrl)
+
+			if tt.setup != nil {
+				tt.setup(ur, tr)
+			}
+
+			usecase := NewUserUseCase(ur, tr)
+			updateUser, err := usecase.UpdateUser(tt.arg.ctx, tt.arg.coins, tt.arg.highscore)
+
+			if (err != nil) != (tt.wantErr != nil) {
+				t.Errorf("UpdateUser() error = %v, wantErr %v", err, tt.wantErr)
+			} else if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
+				t.Errorf("UpdateUser() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr == nil && updateUser == nil {
+				t.Error("Failed to update user")
+			}
+		})
+	}
+}

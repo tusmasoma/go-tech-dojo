@@ -65,3 +65,18 @@ func (mr *MockUserUseCaseMockRecorder) GetUser(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUserUseCase)(nil).GetUser), ctx)
 }
+
+// UpdateUser mocks base method.
+func (m *MockUserUseCase) UpdateUser(ctx context.Context, coins, highscore int) (*model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUser", ctx, coins, highscore)
+	ret0, _ := ret[0].(*model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockUserUseCaseMockRecorder) UpdateUser(ctx, coins, highscore interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockUserUseCase)(nil).UpdateUser), ctx, coins, highscore)
+}
