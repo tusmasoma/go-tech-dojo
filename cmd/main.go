@@ -16,6 +16,7 @@ import (
 
 	"github.com/tusmasoma/go-tech-dojo/infra/mysql"
 	"github.com/tusmasoma/go-tech-dojo/interfaces/handler"
+	"github.com/tusmasoma/go-tech-dojo/interfaces/middleware"
 	"github.com/tusmasoma/go-tech-dojo/pkg/log"
 	"github.com/tusmasoma/go-tech-dojo/usecase"
 
@@ -56,6 +57,7 @@ func Serve(addr string) {
 	userRepo := mysql.NewUserRepository(db)
 	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo)
 	userHandler := handler.NewUserHandler(userUseCase)
+	authMiddleware := middleware.NewAuthMiddleware()
 
 	/* ===== URLマッピングを行う ===== */
 	r := chi.NewRouter()
@@ -71,6 +73,10 @@ func Serve(addr string) {
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/user", func(r chi.Router) {
 			r.Post("/create", userHandler.CreateUser)
+			r.Group(func(r chi.Router) {
+				r.Use(authMiddleware.Authenticate)
+				r.Get("/get", userHandler.GetUser)
+			})
 		})
 	})
 

@@ -64,7 +64,7 @@ paths:
               schema:
                 type: string
       x-codegen-request-body-name: body
-  /user/get:
+  /api/user/get:
     get:
       tags:
         - user
@@ -80,7 +80,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserGetResponse'
+                $ref: '#/components/schemas/GetUserResponse'
       x-codegen-request-body-name: body
   /user/update:
     post:
@@ -241,7 +241,7 @@ components:
         coin:
           type: integer
           description: 所持コイン
-    UserGetResponse:
+    GetUserResponse:
       type: object
       properties:
         id:
@@ -250,9 +250,9 @@ components:
         name:
           type: string
           description: ユーザ名
-        password:
+        email:
           type: string
-          description: ユーザのパスワード
+          description: ユーザのメールアドレス
         highScore:
           type: integer
           description: ハイスコア

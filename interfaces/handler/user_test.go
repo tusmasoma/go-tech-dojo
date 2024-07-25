@@ -3,15 +3,86 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 
+	"github.com/tusmasoma/go-tech-dojo/domain/model"
 	"github.com/tusmasoma/go-tech-dojo/usecase/mock"
 )
+
+func TestUserHandler_GetUser(t *testing.T) {
+	t.Parallel()
+
+	user := model.User{
+		ID:        uuid.New().String(),
+		Name:      "test",
+		Email:     "test@gmail.com",
+		Coins:     100,
+		HighScore: 1000,
+	}
+
+	patterns := []struct {
+		name  string
+		setup func(
+			m *mock.MockUserUseCase,
+		)
+		in         func() *http.Request
+		wantStatus int
+	}{
+		{
+			name: "success",
+			setup: func(m *mock.MockUserUseCase) {
+				m.EXPECT().GetUser(gomock.Any()).Return(&user, nil)
+			},
+			in: func() *http.Request {
+				req, _ := http.NewRequest(http.MethodGet, "/api/user/get", nil)
+				return req
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "Fail: No User ID in context",
+			setup: func(m *mock.MockUserUseCase) {
+				m.EXPECT().GetUser(gomock.Any()).Return(
+					nil,
+					fmt.Errorf("user name not found in request context"),
+				)
+			},
+			in: func() *http.Request {
+				req, _ := http.NewRequest(http.MethodGet, "/api/user/get", nil)
+				return req
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+	for _, tt := range patterns {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			uuc := mock.NewMockUserUseCase(ctrl)
+
+			if tt.setup != nil {
+				tt.setup(uuc)
+			}
+
+			handler := NewUserHandler(uuc)
+			recorder := httptest.NewRecorder()
+			handler.GetUser(recorder, tt.in())
+
+			if status := recorder.Code; status != tt.wantStatus {
+				t.Fatalf("handler returned wrong status code: got %v want %v", status, tt.wantStatus)
+			}
+		})
+	}
+}
 
 func TestUserHandler_CreateUser(t *testing.T) {
 	t.Parallel()

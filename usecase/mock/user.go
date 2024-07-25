@@ -9,6 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+
+	model "github.com/tusmasoma/go-tech-dojo/domain/model"
 )
 
 // MockUserUseCase is a mock of UserUseCase interface.
@@ -47,4 +49,19 @@ func (m *MockUserUseCase) CreateUserAndToken(ctx context.Context, email, passwar
 func (mr *MockUserUseCaseMockRecorder) CreateUserAndToken(ctx, email, passward interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserAndToken", reflect.TypeOf((*MockUserUseCase)(nil).CreateUserAndToken), ctx, email, passward)
+}
+
+// GetUser mocks base method.
+func (m *MockUserUseCase) GetUser(ctx context.Context) (*model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUser", ctx)
+	ret0, _ := ret[0].(*model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUser indicates an expected call of GetUser.
+func (mr *MockUserUseCaseMockRecorder) GetUser(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUserUseCase)(nil).GetUser), ctx)
 }
