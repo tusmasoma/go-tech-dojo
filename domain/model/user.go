@@ -41,3 +41,19 @@ func extractNameFromEmail(email string) string {
 	}
 	return "unknown"
 }
+
+type UserCollection struct {
+	UserID       string `json:"user_id"`
+	CollectionID string `json:"collection_id"`
+}
+
+func NewUserCollection(userID, collectionID string) (*UserCollection, error) {
+	if userID == "" || collectionID == "" {
+		log.Error("UserID or CollectionID is empty", log.Fstring("userID", userID), log.Fstring("collectionID", collectionID))
+		return nil, fmt.Errorf("userID or collectionID is empty")
+	}
+	return &UserCollection{
+		UserID:       userID,
+		CollectionID: collectionID,
+	}, nil
+}
