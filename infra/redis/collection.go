@@ -7,12 +7,11 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
+	"github.com/tusmasoma/go-tech-dojo/config"
 	"github.com/tusmasoma/go-tech-dojo/domain/model"
 	"github.com/tusmasoma/go-tech-dojo/domain/repository"
 	"github.com/tusmasoma/go-tech-dojo/pkg/log"
 )
-
-var ErrCacheMiss = errors.New("cache: key not found")
 
 type collectionRepository struct {
 	client *redis.Client
@@ -28,7 +27,7 @@ func (c *collectionRepository) Get(ctx context.Context, key string) (model.Colle
 	val, err := c.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		log.Warn("Cache miss", log.Fstring("key", key))
-		return nil, ErrCacheMiss
+		return nil, config.ErrCacheMiss
 	} else if err != nil {
 		log.Error("Failed to get cache", log.Ferror(err))
 		return nil, err

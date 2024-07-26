@@ -358,7 +358,7 @@ components:
     CollectionItem:
       type: object
       properties:
-        Id:
+        id:
           type: string
           description: コレクションID
         name:
@@ -370,6 +370,6 @@ components:
         weight:
           type: integer
           description: 重さ
-        hasItem:
+        has:
           type: boolean
           description: 所持判定(trueなら所持している.falseなら未所持)

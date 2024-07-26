@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/tusmasoma/go-tech-dojo/infra/mysql"
+	"github.com/tusmasoma/go-tech-dojo/infra/redis"
 	"github.com/tusmasoma/go-tech-dojo/interfaces/handler"
 	"github.com/tusmasoma/go-tech-dojo/interfaces/middleware"
 	"github.com/tusmasoma/go-tech-dojo/pkg/log"
@@ -52,10 +53,16 @@ func Serve(addr string) {
 		log.Error("Failed to connect to DB", log.Ferror(err))
 		return
 	}
+	defer db.Close()
+
+	client := redis.NewRedisClient(mainCtx)
 
 	transactionRepo := mysql.NewTransactionRepository(db)
 	userRepo := mysql.NewUserRepository(db)
-	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo)
+	userCollectionRepo := mysql.NewUserCollectionRepository(db)
+	collectionRepo := mysql.NewCollectionRepository(db)
+	collectionCacheRepo := redis.NewCollectionRepository(client)
+	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo, userCollectionRepo, collectionRepo, collectionCacheRepo)
 	userHandler := handler.NewUserHandler(userUseCase)
 	authMiddleware := middleware.NewAuthMiddleware()
 
@@ -77,6 +84,12 @@ func Serve(addr string) {
 				r.Use(authMiddleware.Authenticate)
 				r.Get("/get", userHandler.GetUser)
 				r.Put("/update", userHandler.UpdateUser)
+			})
+		})
+		r.Route("/collection", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(authMiddleware.Authenticate)
+				r.Get("/list", userHandler.ListUserCollections)
 			})
 		})
 	})
