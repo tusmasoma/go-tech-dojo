@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 
 	model "github.com/tusmasoma/go-tech-dojo/domain/model"
+	usecase "github.com/tusmasoma/go-tech-dojo/usecase"
 )
 
 // MockUserUseCase is a mock of UserUseCase interface.
@@ -64,6 +65,21 @@ func (m *MockUserUseCase) GetUser(ctx context.Context) (*model.User, error) {
 func (mr *MockUserUseCaseMockRecorder) GetUser(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUserUseCase)(nil).GetUser), ctx)
+}
+
+// ListUserCollections mocks base method.
+func (m *MockUserUseCase) ListUserCollections(ctx context.Context) ([]*usecase.Collection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUserCollections", ctx)
+	ret0, _ := ret[0].([]*usecase.Collection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUserCollections indicates an expected call of ListUserCollections.
+func (mr *MockUserUseCaseMockRecorder) ListUserCollections(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserCollections", reflect.TypeOf((*MockUserUseCase)(nil).ListUserCollections), ctx)
 }
 
 // UpdateUser mocks base method.

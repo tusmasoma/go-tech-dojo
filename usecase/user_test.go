@@ -61,12 +61,15 @@ func TestUserUseCase_GetUser(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			ur := mock.NewMockUserRepository(ctrl)
 			tr := mock.NewMockTransactionRepository(ctrl)
+			ucr := mock.NewMockUserCollectionRepository(ctrl)
+			cr := mock.NewMockCollectionRepository(ctrl)
+			ccr := mock.NewMockCollectionCacheRepository(ctrl)
 
 			if tt.setup != nil {
 				tt.setup(ur, tr)
 			}
 
-			usecase := NewUserUseCase(ur, tr)
+			usecase := NewUserUseCase(ur, tr, ucr, cr, ccr)
 			_, err := usecase.GetUser(tt.ctx)
 
 			if (err != nil) != (tt.wantErr != nil) {
@@ -145,12 +148,15 @@ func TestUserUseCase_CreateUserAndToken(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			ur := mock.NewMockUserRepository(ctrl)
 			tr := mock.NewMockTransactionRepository(ctrl)
+			ucr := mock.NewMockUserCollectionRepository(ctrl)
+			cr := mock.NewMockCollectionRepository(ctrl)
+			ccr := mock.NewMockCollectionCacheRepository(ctrl)
 
 			if tt.setup != nil {
 				tt.setup(ur, tr)
 			}
 
-			usecase := NewUserUseCase(ur, tr)
+			usecase := NewUserUseCase(ur, tr, ucr, cr, ccr)
 			jwt, err := usecase.CreateUserAndToken(tt.arg.ctx, tt.arg.email, tt.arg.passward)
 
 			if (err != nil) != (tt.wantErr != nil) {
@@ -234,12 +240,15 @@ func TestUserUseCase_UpdateUser(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			ur := mock.NewMockUserRepository(ctrl)
 			tr := mock.NewMockTransactionRepository(ctrl)
+			ucr := mock.NewMockUserCollectionRepository(ctrl)
+			cr := mock.NewMockCollectionRepository(ctrl)
+			ccr := mock.NewMockCollectionCacheRepository(ctrl)
 
 			if tt.setup != nil {
 				tt.setup(ur, tr)
 			}
 
-			usecase := NewUserUseCase(ur, tr)
+			usecase := NewUserUseCase(ur, tr, ucr, cr, ccr)
 			updateUser, err := usecase.UpdateUser(tt.arg.ctx, tt.arg.coins, tt.arg.highscore)
 
 			if (err != nil) != (tt.wantErr != nil) {
@@ -250,6 +259,219 @@ func TestUserUseCase_UpdateUser(t *testing.T) {
 
 			if tt.wantErr == nil && updateUser == nil {
 				t.Error("Failed to update user")
+			}
+		})
+	}
+}
+
+func TestUserUseCase_ListUserCollections(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New().String()
+	collection1ID := uuid.New().String()
+	collection2ID := uuid.New().String()
+	collection3ID := uuid.New().String()
+
+	ctx := context.WithValue(context.Background(), config.ContextUserIDKey, userID)
+
+	collections := model.Collections{
+		{
+			ID:     collection1ID,
+			Name:   "collection1",
+			Rarity: 3,
+			Weight: 3,
+		},
+		{
+			ID:     collection2ID,
+			Name:   "collection2",
+			Rarity: 2,
+			Weight: 2,
+		},
+		{
+			ID:     collection3ID,
+			Name:   "collection3",
+			Rarity: 1,
+			Weight: 1,
+		},
+	}
+
+	patterns := []struct {
+		name  string
+		setup func(
+			m *mock.MockCollectionRepository,
+			m1 *mock.MockCollectionCacheRepository,
+			m2 *mock.MockUserCollectionRepository,
+		)
+		want struct {
+			collections []*Collection
+			err         error
+		}
+	}{
+		{
+			name: "Success: get collections in cache",
+			setup: func(
+				m *mock.MockCollectionRepository,
+				m1 *mock.MockCollectionCacheRepository,
+				m2 *mock.MockUserCollectionRepository,
+			) {
+				m1.EXPECT().Get(
+					ctx,
+					"collections",
+				).Return(
+					collections,
+					nil,
+				)
+				m2.EXPECT().List(ctx, userID).Return(
+					[]*model.UserCollection{
+						{
+							UserID:       userID,
+							CollectionID: collection1ID,
+						},
+						{
+							UserID:       userID,
+							CollectionID: collection2ID,
+						},
+					},
+					nil,
+				)
+			},
+			want: struct {
+				collections []*Collection
+				err         error
+			}{
+				collections: []*Collection{
+					{
+						Collection: &model.Collection{
+							ID:     collection1ID,
+							Name:   "collection1",
+							Rarity: 3,
+							Weight: 3,
+						},
+						Has: true,
+					},
+					{
+						Collection: &model.Collection{
+							ID:     collection2ID,
+							Name:   "collection2",
+							Rarity: 2,
+							Weight: 2,
+						},
+						Has: true,
+					},
+					{
+						Collection: &model.Collection{
+							ID:     collection3ID,
+							Name:   "collection3",
+							Rarity: 1,
+							Weight: 1,
+						},
+						Has: false,
+					},
+				},
+				err: nil,
+			},
+		},
+		{
+			name: "Success: get collections in DB",
+			setup: func(
+				m *mock.MockCollectionRepository,
+				m1 *mock.MockCollectionCacheRepository,
+				m2 *mock.MockUserCollectionRepository,
+			) {
+				m1.EXPECT().Get(
+					ctx,
+					"collections",
+				).Return(
+					nil,
+					config.ErrCacheMiss,
+				)
+				m.EXPECT().List(ctx).Return(
+					collections,
+					nil,
+				)
+				m1.EXPECT().Create(
+					ctx,
+					"collections",
+					collections,
+				).Return(nil)
+				m2.EXPECT().List(ctx, userID).Return(
+					[]*model.UserCollection{
+						{
+							UserID:       userID,
+							CollectionID: collection1ID,
+						},
+						{
+							UserID:       userID,
+							CollectionID: collection2ID,
+						},
+					},
+					nil,
+				)
+			},
+			want: struct {
+				collections []*Collection
+				err         error
+			}{
+				collections: []*Collection{
+					{
+						Collection: &model.Collection{
+							ID:     collection1ID,
+							Name:   "collection1",
+							Rarity: 3,
+							Weight: 3,
+						},
+						Has: true,
+					},
+					{
+						Collection: &model.Collection{
+							ID:     collection2ID,
+							Name:   "collection2",
+							Rarity: 2,
+							Weight: 2,
+						},
+						Has: true,
+					},
+					{
+						Collection: &model.Collection{
+							ID:     collection3ID,
+							Name:   "collection3",
+							Rarity: 1,
+							Weight: 1,
+						},
+						Has: false,
+					},
+				},
+				err: nil,
+			},
+		},
+	}
+	for _, tt := range patterns {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			ur := mock.NewMockUserRepository(ctrl)
+			tr := mock.NewMockTransactionRepository(ctrl)
+			ucr := mock.NewMockUserCollectionRepository(ctrl)
+			cr := mock.NewMockCollectionRepository(ctrl)
+			ccr := mock.NewMockCollectionCacheRepository(ctrl)
+
+			if tt.setup != nil {
+				tt.setup(cr, ccr, ucr)
+			}
+
+			usecase := NewUserUseCase(ur, tr, ucr, cr, ccr)
+			collections, err := usecase.ListUserCollections(ctx)
+
+			if (err != nil) != (tt.want.err != nil) {
+				t.Errorf("ListUserCollections() error = %v, wantErr %v", err, tt.want.err)
+			} else if err != nil && tt.want.err != nil && err.Error() != tt.want.err.Error() {
+				t.Errorf("ListUserCollections() error = %v, wantErr %v", err, tt.want.err)
+			}
+
+			if tt.want.err == nil && collections == nil {
+				t.Error("Failed to list user collections")
 			}
 		})
 	}

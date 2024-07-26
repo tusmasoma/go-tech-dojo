@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/tusmasoma/go-tech-dojo/domain/model"
+	"github.com/tusmasoma/go-tech-dojo/usecase"
 	"github.com/tusmasoma/go-tech-dojo/usecase/mock"
 )
 
@@ -225,6 +226,80 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 			handler := NewUserHandler(uuc)
 			recorder := httptest.NewRecorder()
 			handler.UpdateUser(recorder, tt.in())
+
+			if status := recorder.Code; status != tt.wantStatus {
+				t.Fatalf("handler returned wrong status code: got %v want %v", status, tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestUserHandler_ListUserCollections(t *testing.T) {
+	t.Parallel()
+
+	patterns := []struct {
+		name  string
+		setup func(
+			m *mock.MockUserUseCase,
+		)
+		in         func() *http.Request
+		wantStatus int
+	}{
+		{
+			name: "success",
+			setup: func(m *mock.MockUserUseCase) {
+				m.EXPECT().ListUserCollections(gomock.Any()).Return(
+					[]*usecase.Collection{
+						{
+							Collection: &model.Collection{
+								ID:     uuid.New().String(),
+								Name:   "collection",
+								Rarity: 3,
+								Weight: 10,
+							},
+							Has: true,
+						},
+					},
+					nil,
+				)
+			},
+			in: func() *http.Request {
+				req, _ := http.NewRequest(http.MethodGet, "/api/collection/list", nil)
+				return req
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "Fail: No User ID in context",
+			setup: func(m *mock.MockUserUseCase) {
+				m.EXPECT().ListUserCollections(gomock.Any()).Return(
+					nil,
+					fmt.Errorf("user name not found in request context"),
+				)
+			},
+			in: func() *http.Request {
+				req, _ := http.NewRequest(http.MethodGet, "/api/collection/list", nil)
+				return req
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range patterns {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			uuc := mock.NewMockUserUseCase(ctrl)
+
+			if tt.setup != nil {
+				tt.setup(uuc)
+			}
+
+			handler := NewUserHandler(uuc)
+			recorder := httptest.NewRecorder()
+			handler.ListUserCollections(recorder, tt.in())
 
 			if status := recorder.Code; status != tt.wantStatus {
 				t.Fatalf("handler returned wrong status code: got %v want %v", status, tt.wantStatus)

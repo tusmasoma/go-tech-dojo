@@ -187,7 +187,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RankingListResponse'
-  /collection/list:
+  /api/collection/list:
     get:
       tags:
         - collection
@@ -201,7 +201,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollectionListResponse'
+                $ref: '#/components/schemas/ListCollectionsResponse'
 components:
   securitySchemes:
     BearerAuth:
@@ -320,7 +320,7 @@ components:
           items:
             $ref: '#/components/schemas/RankInfo'
           description: 各順位情報
-    CollectionListResponse:
+    ListCollectionsResponse:
       type: object
       properties:
         collections:
@@ -358,7 +358,7 @@ components:
     CollectionItem:
       type: object
       properties:
-        Id:
+        id:
           type: string
           description: コレクションID
         name:
@@ -370,6 +370,6 @@ components:
         weight:
           type: integer
           description: 重さ
-        hasItem:
+        has:
           type: boolean
           description: 所持判定(trueなら所持している.falseなら未所持)

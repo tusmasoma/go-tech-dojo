@@ -34,9 +34,9 @@ CREATE TABLE Scores (
 
 -- UserCollections Table
 CREATE TABLE User_Collections (
-    id CHAR(36) PRIMARY KEY,
     user_id CHAR(36),
     collection_id CHAR(36),
+    UNIQUE(user_id, collection_id),
     FOREIGN KEY (user_id) REFERENCES Users(id),
     FOREIGN KEY (collection_id) REFERENCES Collections(id)
 );

@@ -3,6 +3,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/tusmasoma/go-tech-dojo/config"
@@ -14,19 +15,32 @@ import (
 
 type UserUseCase interface {
 	GetUser(ctx context.Context) (*model.User, error)
+	ListUserCollections(ctx context.Context) ([]*Collection, error)
 	CreateUserAndToken(ctx context.Context, email string, passward string) (string, error)
 	UpdateUser(ctx context.Context, coins, highscore int) (*model.User, error)
 }
 
 type userUseCase struct {
-	ur repository.UserRepository
-	tr repository.TransactionRepository
+	ur  repository.UserRepository
+	tr  repository.TransactionRepository
+	ucr repository.UserCollectionRepository
+	cr  repository.CollectionRepository
+	ccr repository.CollectionCacheRepository
 }
 
-func NewUserUseCase(ur repository.UserRepository, tr repository.TransactionRepository) UserUseCase {
+func NewUserUseCase(
+	ur repository.UserRepository,
+	tr repository.TransactionRepository,
+	ucr repository.UserCollectionRepository,
+	cr repository.CollectionRepository,
+	ccr repository.CollectionCacheRepository,
+) UserUseCase {
 	return &userUseCase{
-		ur: ur,
-		tr: tr,
+		ur:  ur,
+		tr:  tr,
+		ucr: ucr,
+		cr:  cr,
+		ccr: ccr,
 	}
 }
 
@@ -101,4 +115,58 @@ func (uuc *userUseCase) UpdateUser(ctx context.Context, coins, highscore int) (*
 		return nil, err
 	}
 	return user, nil
+}
+
+type Collection struct {
+	*model.Collection
+	Has bool
+}
+
+func (uuc *userUseCase) ListUserCollections(ctx context.Context) ([]*Collection, error) {
+	userIDValue := ctx.Value(config.ContextUserIDKey)
+	userID, ok := userIDValue.(string)
+	if !ok {
+		log.Error("User ID not found in request context")
+		return nil, fmt.Errorf("user name not found in request context")
+	}
+
+	collections, err := uuc.ccr.Get(ctx, "collections")
+	if errors.Is(err, config.ErrCacheMiss) {
+		log.Info("Cache miss", log.Fstring("key", "collections"))
+		collections, err = uuc.cr.List(ctx)
+		if err != nil {
+			log.Error("Error getting collections", log.Ferror(err))
+			return nil, err
+		}
+
+		if err = uuc.ccr.Create(ctx, "collections", collections); err != nil {
+			log.Error("Error setting collections to cache", log.Ferror(err))
+			return nil, err
+		}
+	} else if err != nil {
+		log.Error("Error getting collections from cache", log.Ferror(err))
+		return nil, err
+	}
+
+	userCollections, err := uuc.ucr.List(ctx, userID)
+	if err != nil {
+		log.Error("Error getting user collections", log.Fstring("user_id", userID))
+		return nil, err
+	}
+
+	userCollectionMap := make(map[string]bool)
+	for _, uc := range userCollections {
+		userCollectionMap[uc.CollectionID] = true
+	}
+
+	var reusult []*Collection
+	for _, c := range collections {
+		has := userCollectionMap[c.ID]
+		reusult = append(reusult, &Collection{
+			Collection: c,
+			Has:        has,
+		})
+	}
+
+	return reusult, nil
 }

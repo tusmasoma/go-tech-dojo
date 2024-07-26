@@ -11,6 +11,7 @@ import (
 
 type UserHandler interface {
 	GetUser(w http.ResponseWriter, r *http.Request)
+	ListUserCollections(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
 	UpdateUser(w http.ResponseWriter, r *http.Request)
 }
@@ -146,4 +147,60 @@ func (uh *userHandler) isValidUpdateUserRequest(body io.ReadCloser, requestBody 
 		return false
 	}
 	return true
+}
+
+type ListUserCollectionsResponse struct {
+	Collections []struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Rarity int    `json:"rarity"`
+		Weight int    `json:"weight"`
+		Has    bool   `json:"has"`
+	} `json:"collections"`
+}
+
+func (uh *userHandler) ListUserCollections(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	collections, err := uh.uuc.ListUserCollections(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := uh.convertToResponseCollections(collections)
+	w.Header().Set("Content-Type", "application/json")
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Failed to encode collections to JSON", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (uh *userHandler) convertToResponseCollections(collections []*usecase.Collection) ListUserCollectionsResponse {
+	responseCollections := make([]struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Rarity int    `json:"rarity"`
+		Weight int    `json:"weight"`
+		Has    bool   `json:"has"`
+	}, len(collections))
+
+	for i, collection := range collections {
+		responseCollections[i] = struct {
+			ID     string `json:"id"`
+			Name   string `json:"name"`
+			Rarity int    `json:"rarity"`
+			Weight int    `json:"weight"`
+			Has    bool   `json:"has"`
+		}{
+			ID:     collection.ID,
+			Name:   collection.Name,
+			Rarity: collection.Rarity,
+			Weight: collection.Weight,
+			Has:    collection.Has,
+		}
+	}
+
+	return ListUserCollectionsResponse{Collections: responseCollections}
 }
