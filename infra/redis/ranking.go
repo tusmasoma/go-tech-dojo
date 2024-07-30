@@ -27,15 +27,15 @@ func (rr *rankingRepository) List(ctx context.Context, key string, start int) ([
 		log.Error("Failed to get ranking", log.Ferror(err))
 		return nil, err
 	}
-	if int64(start) > total {
+	if int64(start) > total || start < 1 {
 		log.Warn("Ranking is empty", log.Fint("start", start), log.Fint("count", int(total)))
-		return nil, fmt.Errorf("start index out of range, there are only %d items in the ranking", total)
+		return nil, fmt.Errorf("ranking is empty")
 	}
 
 	results, err := rr.client.ZRevRangeWithScores(
 		ctx,
 		key,
-		int64(start),
+		int64(start-1),
 		int64(start+model.MaxRankingCount-1),
 	).Result()
 	if err != nil {
