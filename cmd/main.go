@@ -62,8 +62,11 @@ func Serve(addr string) {
 	userCollectionRepo := mysql.NewUserCollectionRepository(db)
 	collectionRepo := mysql.NewCollectionRepository(db)
 	collectionCacheRepo := redis.NewCollectionRepository(client)
+	ranking := redis.NewRankingRepository(client)
 	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo, userCollectionRepo, collectionRepo, collectionCacheRepo)
+	rankingUseCase := usecase.NewRankingUseCase(ranking)
 	userHandler := handler.NewUserHandler(userUseCase)
+	rankingHandler := handler.NewRankingHandler(rankingUseCase)
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	/* ===== URLマッピングを行う ===== */
@@ -91,6 +94,9 @@ func Serve(addr string) {
 				r.Use(authMiddleware.Authenticate)
 				r.Get("/list", userHandler.ListUserCollections)
 			})
+		})
+		r.Route("/ranking", func(r chi.Router) {
+			r.Get("/list", rankingHandler.ListRankings)
 		})
 	})
 
