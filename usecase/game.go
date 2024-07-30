@@ -12,7 +12,7 @@ import (
 )
 
 type GameUseCase interface {
-	FinishGame(ctx context.Context, score int) (int, error)
+	FinishGame(ctx context.Context, scoreValue int) (int, error)
 }
 
 type gameUseCase struct {
@@ -36,7 +36,7 @@ func NewGameUseCase(
 	}
 }
 
-func (guc *gameUseCase) FinishGame(ctx context.Context, score int) (int, error) {
+func (guc *gameUseCase) FinishGame(ctx context.Context, scoreValue int) (int, error) {
 	userIDValue := ctx.Value(config.ContextUserIDKey)
 	userID, ok := userIDValue.(string)
 	if !ok {
@@ -52,7 +52,7 @@ func (guc *gameUseCase) FinishGame(ctx context.Context, score int) (int, error) 
 	var coin int
 	err = guc.tr.Transaction(ctx, func(ctx context.Context) error {
 		var game model.Game
-		score, err := model.NewScore(user.ID, score) //nolint:govet // This is a valid code
+		score, err := model.NewScore(user.ID, scoreValue) //nolint:govet // This is a valid code
 		if err != nil {
 			log.Error("Failed to create score", log.Ferror(err))
 			return err
@@ -62,10 +62,10 @@ func (guc *gameUseCase) FinishGame(ctx context.Context, score int) (int, error) 
 			return err
 		}
 
-		if user.HighScore < score.Value {
-			user.HighScore = score.Value
+		if user.HighScore < scoreValue {
+			user.HighScore = scoreValue
 		}
-		coin = game.Reward(score.Value)
+		coin = game.Reward(scoreValue)
 		user.Coins += coin
 		if err = guc.ur.Update(ctx, *user); err != nil {
 			log.Error("Failed to update user", log.Ferror(err))
@@ -82,7 +82,7 @@ func (guc *gameUseCase) FinishGame(ctx context.Context, score int) (int, error) 
 		model.ScoreBoardKey,
 		&model.Ranking{
 			UserName: user.Name,
-			Score:    score,
+			Score:    scoreValue,
 		},
 	); err != nil {
 		log.Error("Failed to create ranking", log.Ferror(err))

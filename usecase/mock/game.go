@@ -35,16 +35,16 @@ func (m *MockGameUseCase) EXPECT() *MockGameUseCaseMockRecorder {
 }
 
 // FinishGame mocks base method.
-func (m *MockGameUseCase) FinishGame(ctx context.Context, score int) (int, error) {
+func (m *MockGameUseCase) FinishGame(ctx context.Context, scoreValue int) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FinishGame", ctx, score)
+	ret := m.ctrl.Call(m, "FinishGame", ctx, scoreValue)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FinishGame indicates an expected call of FinishGame.
-func (mr *MockGameUseCaseMockRecorder) FinishGame(ctx, score interface{}) *gomock.Call {
+func (mr *MockGameUseCaseMockRecorder) FinishGame(ctx, scoreValue interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishGame", reflect.TypeOf((*MockGameUseCase)(nil).FinishGame), ctx, score)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishGame", reflect.TypeOf((*MockGameUseCase)(nil).FinishGame), ctx, scoreValue)
 }
