@@ -107,7 +107,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UpdateUserResponse'
       x-codegen-request-body-name: body
-  /game/finish:
+  /api/game/finish:
     post:
       tags:
         - game
