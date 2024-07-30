@@ -61,12 +61,15 @@ func Serve(addr string) {
 	userRepo := mysql.NewUserRepository(db)
 	userCollectionRepo := mysql.NewUserCollectionRepository(db)
 	collectionRepo := mysql.NewCollectionRepository(db)
+	scoreRepo := mysql.NewScoreRepository(db)
 	collectionCacheRepo := redis.NewCollectionRepository(client)
-	ranking := redis.NewRankingRepository(client)
+	rankingRepo := redis.NewRankingRepository(client)
 	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo, userCollectionRepo, collectionRepo, collectionCacheRepo)
-	rankingUseCase := usecase.NewRankingUseCase(ranking)
+	rankingUseCase := usecase.NewRankingUseCase(rankingRepo)
+	gameUsecase := usecase.NewGameUseCase(transactionRepo, userRepo, scoreRepo, rankingRepo)
 	userHandler := handler.NewUserHandler(userUseCase)
 	rankingHandler := handler.NewRankingHandler(rankingUseCase)
+	gameHandler := handler.NewGameHandler(gameUsecase)
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	/* ===== URLマッピングを行う ===== */
@@ -97,6 +100,12 @@ func Serve(addr string) {
 		})
 		r.Route("/ranking", func(r chi.Router) {
 			r.Get("/list", rankingHandler.ListRankings)
+		})
+		r.Route("/game", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(authMiddleware.Authenticate)
+				r.Post("/finish", gameHandler.FinishGame)
+			})
 		})
 	})
 
