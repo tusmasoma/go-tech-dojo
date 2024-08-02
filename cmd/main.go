@@ -105,6 +105,11 @@ func Serve(addr string) {
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.Authenticate)
 				r.Post("/finish", gameHandler.FinishGame)
+			})
+		})
+		r.Route("/gacha", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(authMiddleware.Authenticate)
 				r.Post("/draw", gameHandler.DrawGacha)
 			})
 		})
