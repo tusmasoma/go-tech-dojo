@@ -80,7 +80,7 @@ type DrawGachaResponse struct {
 		ID     string `json:"id"`
 		Name   string `json:"name"`
 		Rarity int    `json:"rarity"`
-		ISNew  bool   `json:"is_new"`
+		IsNew  bool   `json:"is_new"`
 	} `json:"results"`
 }
 
@@ -127,19 +127,19 @@ func (gh *gameHandler) convertToDrawGachaResponse(gachaResults []*usecase.GachaR
 		ID     string `json:"id"`
 		Name   string `json:"name"`
 		Rarity int    `json:"rarity"`
-		ISNew  bool   `json:"is_new"`
+		IsNew  bool   `json:"is_new"`
 	}
 	for _, item := range gachaResults {
 		results = append(results, struct {
 			ID     string `json:"id"`
 			Name   string `json:"name"`
 			Rarity int    `json:"rarity"`
-			ISNew  bool   `json:"is_new"`
+			IsNew  bool   `json:"is_new"`
 		}{
 			ID:     item.ID,
 			Name:   item.Name,
 			Rarity: item.Rarity,
-			ISNew:  !item.Has,
+			IsNew:  !item.Has,
 		})
 	}
 	return DrawGachaResponse{
