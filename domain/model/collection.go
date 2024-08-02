@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -37,3 +39,18 @@ func NewCollection(name string, rarity, weight int) (*Collection, error) {
 }
 
 type Collections []*Collection
+
+func (cs Collections) TotalWeight() int {
+	var total int
+	for _, c := range cs {
+		total += c.Weight
+	}
+	return total
+}
+
+func (cs Collections) Shuffle() {
+	r := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec // Use time.Now().UnixNano() as seed
+	r.Shuffle(len(cs), func(i, j int) {
+		cs[i], cs[j] = cs[j], cs[i]
+	})
+}
