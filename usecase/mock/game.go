@@ -9,6 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+
+	usecase "github.com/tusmasoma/go-tech-dojo/usecase"
 )
 
 // MockGameUseCase is a mock of GameUseCase interface.
@@ -32,6 +34,21 @@ func NewMockGameUseCase(ctrl *gomock.Controller) *MockGameUseCase {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGameUseCase) EXPECT() *MockGameUseCaseMockRecorder {
 	return m.recorder
+}
+
+// DrawGacha mocks base method.
+func (m *MockGameUseCase) DrawGacha(ctx context.Context, times int) ([]*usecase.GachaResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DrawGacha", ctx, times)
+	ret0, _ := ret[0].([]*usecase.GachaResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DrawGacha indicates an expected call of DrawGacha.
+func (mr *MockGameUseCaseMockRecorder) DrawGacha(ctx, times interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrawGacha", reflect.TypeOf((*MockGameUseCase)(nil).DrawGacha), ctx, times)
 }
 
 // FinishGame mocks base method.

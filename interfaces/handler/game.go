@@ -11,6 +11,7 @@ import (
 
 type GameHandler interface {
 	FinishGame(w http.ResponseWriter, r *http.Request)
+	DrawGacha(w http.ResponseWriter, r *http.Request)
 }
 
 type gameHandler struct {
@@ -68,4 +69,80 @@ func (gh *gameHandler) isValidFinishGameRequest(body io.ReadCloser, requestBody 
 		return false
 	}
 	return true
+}
+
+type DrawGachaRequest struct {
+	Times int `json:"times"`
+}
+
+type DrawGachaResponse struct {
+	Results []struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Rarity int    `json:"rarity"`
+		IsNew  bool   `json:"is_new"`
+	} `json:"results"`
+}
+
+func (gh *gameHandler) DrawGacha(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var requestBody DrawGachaRequest
+	defer r.Body.Close()
+	if !gh.isValidDrawGachaRequest(r.Body, &requestBody) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	gachaResults, err := gh.guc.DrawGacha(ctx, requestBody.Times)
+	if err != nil {
+		log.Error("Failed to draw gacha", log.Ferror(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := gh.convertToDrawGachaResponse(gachaResults)
+	w.Header().Set("Content-Type", "application/json")
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		log.Error("Failed to encode response to JSON", log.Ferror(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (gh *gameHandler) isValidDrawGachaRequest(body io.ReadCloser, requestBody *DrawGachaRequest) bool {
+	if err := json.NewDecoder(body).Decode(requestBody); err != nil {
+		log.Error("Failed to decode request body: %v", err)
+		return false
+	}
+	if requestBody.Times < 0 || requestBody.Times > 10 {
+		log.Warn("Invalid request body: %v", requestBody)
+		return false
+	}
+	return true
+}
+
+func (gh *gameHandler) convertToDrawGachaResponse(gachaResults []*usecase.GachaResult) DrawGachaResponse {
+	var results []struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Rarity int    `json:"rarity"`
+		IsNew  bool   `json:"is_new"`
+	}
+	for _, item := range gachaResults {
+		results = append(results, struct {
+			ID     string `json:"id"`
+			Name   string `json:"name"`
+			Rarity int    `json:"rarity"`
+			IsNew  bool   `json:"is_new"`
+		}{
+			ID:     item.ID,
+			Name:   item.Name,
+			Rarity: item.Rarity,
+			IsNew:  !item.Has,
+		})
+	}
+	return DrawGachaResponse{
+		Results: results,
+	}
 }

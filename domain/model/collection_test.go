@@ -2,10 +2,12 @@ package model
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 )
 
 func TestModel_NewCollection(t *testing.T) {
@@ -122,5 +124,81 @@ func TestModel_NewCollection(t *testing.T) {
 				t.Errorf("NewCollection() mismatch (-got +want):\n%s", d)
 			}
 		})
+	}
+}
+
+func TestModel_TotalWeight(t *testing.T) {
+	t.Parallel()
+
+	collections := Collections{
+		{
+			ID:     uuid.New().String(),
+			Name:   "collection1",
+			Rarity: 3,
+			Weight: 10,
+		},
+		{
+			ID:     uuid.New().String(),
+			Name:   "collection2",
+			Rarity: 4,
+			Weight: 20,
+		},
+		{
+			ID:     uuid.New().String(),
+			Name:   "collection3",
+			Rarity: 5,
+			Weight: 30,
+		},
+	}
+
+	total := collections.TotalWeight()
+
+	if total != 60 {
+		t.Errorf("TotalWeight() = %v, want %v", total, 60)
+	}
+}
+
+func TestModel_Shuffle(t *testing.T) {
+	t.Parallel()
+
+	collections := Collections{
+		{
+			ID:     uuid.New().String(),
+			Name:   "collection1",
+			Rarity: 3,
+			Weight: 10,
+		},
+		{
+			ID:     uuid.New().String(),
+			Name:   "collection2",
+			Rarity: 4,
+			Weight: 20,
+		},
+		{
+			ID:     uuid.New().String(),
+			Name:   "collection3",
+			Rarity: 5,
+			Weight: 30,
+		},
+	}
+
+	originalOrder := make(Collections, len(collections))
+	copy(originalOrder, collections)
+
+	shuffledDifferently := false
+
+	for i := 0; i < 3; i++ {
+		collections.Shuffle()
+
+		if !reflect.DeepEqual(collections, originalOrder) {
+			shuffledDifferently = true
+			break
+		}
+
+		copy(collections, originalOrder)
+	}
+
+	if !shuffledDifferently {
+		t.Errorf("Shuffle() did not produce a different order in 3 attempts")
 	}
 }

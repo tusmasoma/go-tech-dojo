@@ -66,7 +66,7 @@ func Serve(addr string) {
 	rankingRepo := redis.NewRankingRepository(client)
 	userUseCase := usecase.NewUserUseCase(userRepo, transactionRepo, userCollectionRepo, collectionRepo, collectionCacheRepo)
 	rankingUseCase := usecase.NewRankingUseCase(rankingRepo)
-	gameUsecase := usecase.NewGameUseCase(transactionRepo, userRepo, scoreRepo, rankingRepo)
+	gameUsecase := usecase.NewGameUseCase(transactionRepo, userRepo, userCollectionRepo, scoreRepo, rankingRepo, collectionRepo, collectionCacheRepo)
 	userHandler := handler.NewUserHandler(userUseCase)
 	rankingHandler := handler.NewRankingHandler(rankingUseCase)
 	gameHandler := handler.NewGameHandler(gameUsecase)
@@ -105,6 +105,12 @@ func Serve(addr string) {
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.Authenticate)
 				r.Post("/finish", gameHandler.FinishGame)
+			})
+		})
+		r.Route("/gacha", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(authMiddleware.Authenticate)
+				r.Post("/draw", gameHandler.DrawGacha)
 			})
 		})
 	})
