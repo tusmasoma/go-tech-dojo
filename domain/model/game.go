@@ -8,6 +8,7 @@ import (
 const (
 	BaseReward      = 100 // ゲーム基本報酬コイン
 	ScoreMultiplier = 2   // ゲームスコア倍率
+	GachaCost       = 100 // ガチャコスト
 )
 
 type Game struct{}
@@ -39,4 +40,8 @@ func (g *Gacha) Draw(collections Collections) (*Collection, error) {
 		}
 	}
 	return nil, errors.New("failed to pick an item")
+}
+
+func (g *Gacha) Cost(times int) int {
+	return GachaCost * times
 }

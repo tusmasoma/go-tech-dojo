@@ -149,14 +149,17 @@ func TestUserUseCase_FinishGame(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			tr := mock.NewMockTransactionRepository(ctrl)
 			ur := mock.NewMockUserRepository(ctrl)
+			ucr := mock.NewMockUserCollectionRepository(ctrl)
 			sr := mock.NewMockScoreRepository(ctrl)
 			rr := mock.NewMockRankingRepository(ctrl)
+			cr := mock.NewMockCollectionRepository(ctrl)
+			ccr := mock.NewMockCollectionCacheRepository(ctrl)
 
 			if tt.setup != nil {
 				tt.setup(tr, ur, sr, rr)
 			}
 
-			usecase := NewGameUseCase(tr, ur, sr, rr)
+			usecase := NewGameUseCase(tr, ur, ucr, sr, rr, cr, ccr)
 			coin, err := usecase.FinishGame(tt.arg.ctx, tt.arg.score)
 
 			if (err != nil) != (tt.want.err != nil) {
