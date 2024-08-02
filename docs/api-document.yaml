@@ -132,7 +132,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GameFinishResponse'
       x-codegen-request-body-name: body
-  /gacha/draw:
+  /api/gacha/draw:
     post:
       tags:
         - gacha
@@ -331,7 +331,7 @@ components:
     GachaResult:
       type: object
       properties:
-        collectionID:
+        id:
           type: string
           description: コレクションID
         name:
@@ -340,7 +340,7 @@ components:
         rarity:
           type: integer
           description: レアリティ(1=N, 2=R, 3=SR)
-        isNew:
+        is_new:
           type: boolean
           description: 新規獲得判定(trueなら新規獲得.falseなら既に持っていた.)
     RankInfo:
