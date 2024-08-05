@@ -61,7 +61,7 @@ func (uuc *userUseCase) GetUser(ctx context.Context) (*model.User, error) {
 
 func (uuc *userUseCase) CreateUserAndToken(ctx context.Context, email string, password string) (string, error) {
 	var user *model.User
-	err := uuc.tr.Transaction(ctx, func(ctx context.Context) error {
+	if err := uuc.tr.Transaction(ctx, func(ctx context.Context) error {
 		exists, err := uuc.ur.LockUserByEmail(ctx, email)
 		if err != nil {
 			log.Error("Error retrieving user by email", log.Fstring("email", email))
@@ -84,8 +84,7 @@ func (uuc *userUseCase) CreateUserAndToken(ctx context.Context, email string, pa
 		}
 
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return "", err
 	}
 

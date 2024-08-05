@@ -61,7 +61,7 @@ func (guc *gameUseCase) FinishGame(ctx context.Context, scoreValue int) (int, er
 	}
 
 	var coin int
-	err = guc.tr.Transaction(ctx, func(ctx context.Context) error {
+	if err = guc.tr.Transaction(ctx, func(ctx context.Context) error {
 		var game model.Game
 		score, err := model.NewScore(user.ID, scoreValue) //nolint:govet // This is a valid code
 		if err != nil {
@@ -83,8 +83,7 @@ func (guc *gameUseCase) FinishGame(ctx context.Context, scoreValue int) (int, er
 			return err
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return 0, err
 	}
 
@@ -166,7 +165,7 @@ func (guc *gameUseCase) DrawGacha(ctx context.Context, times int) ([]*GachaResul
 		gachaResults = append(gachaResults, gachaResult)
 	}
 
-	err = guc.tr.Transaction(ctx, func(ctx context.Context) error {
+	if err = guc.tr.Transaction(ctx, func(ctx context.Context) error {
 		user.Coins -= gacha.Cost(times)
 		if err = guc.ur.Update(ctx, *user); err != nil {
 			log.Error("Failed to update user", log.Ferror(err))
@@ -187,9 +186,9 @@ func (guc *gameUseCase) DrawGacha(ctx context.Context, times int) ([]*GachaResul
 			return err
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
+
 	return gachaResults, nil
 }
